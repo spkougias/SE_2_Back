@@ -34,6 +34,16 @@ export const mockUsers = [
         following: [],
         gaveLocationPermission: true
     }
+    {
+        _id: "u4",
+        username: "kostas",
+        name: "Kostas",
+        email: "kostas@example.com",
+        isAdmin: true,
+        followers: [],
+        following: [],
+        gaveLocationPermission: false
+    }
 ];
 
 export const mockComments = [
