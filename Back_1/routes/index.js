@@ -1,68 +1,43 @@
 import express from 'express';
 import * as eventController from '../controllers/eventController.js';
 import * as userController from '../controllers/userController.js';
-import * as generalController from '../controllers/generalController.js';
+import * as searchController from '../controllers/searchController.js';
+import * as reportController from '../controllers/reportController.js';
+import * as communicationController from '../controllers/communicationController.js';
+import { authenticateUser, requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-/**
- * @route   GET /search (Mapped to GET Events for simplicity in assignment)
- * @desc    Search events
- */
-router.get('/search', eventController.getEvents);
+// Apply Auth Middleware to all routes
+router.use(authenticateUser);
 
-/**
- * @route   POST /event
- * @desc    Create a new event
- */
-router.post('/event', eventController.createEvent);
+// --- SEARCH ---
+router.get('/search', searchController.search);
 
-/**
- * @route   GET /event/:eventid
- * @desc    Get specific event
- */
-router.get('/event/:eventid', eventController.getEventById);
+// --- EVENT ROUTES ---
+router.post('/event', requireAuth, eventController.createEvent);
+router.get('/event/recommended/:username?', eventController.getRecommendedEvents); 
+router.get('/event/:eventid', eventController.getEventById); 
+router.put('/event/:eventid', requireAuth, eventController.updateEvent);
+router.delete('/event/:eventid', requireAuth, eventController.deleteEvent);
+router.put('/event/:eventid/interested', requireAuth, eventController.toggleInterest);
 
-/**
- * @route   PUT /event/:eventid
- * @desc    Update event
- */
-router.put('/event/:eventid', eventController.updateEvent);
+// Comment specific routes
+router.post('/event/:eventid/comment', requireAuth, eventController.addComment);
+router.delete('/event/:eventid/comment/:commentid', requireAuth, eventController.deleteComment);
+router.put('/event/:eventid/comment/:commentid/pin', requireAuth, eventController.pinComment);
 
-/**
- * @route   DELETE /event/:eventid
- * @desc    Delete event
- */
-router.delete('/event/:eventid', eventController.deleteEvent);
-
-/**
- * @route   PUT /event/:eventid/interested
- * @desc    Toggle interested status
- */
-router.put('/event/:eventid/interested', eventController.toggleInterest);
-
-/**
- * @route   POST /event/:eventid/comment
- * @desc    Add comment to event
- */
-router.post('/event/:eventid/comment', eventController.addComment);
-
-/**
- * @route   GET /user/:username
- * @desc    Get user profile
- */
+// --- USER ROUTES ---
 router.get('/user/:username', userController.getUser);
+router.put('/user/:username/follow', requireAuth, userController.followUser);
+router.put('/user/:username/restrict', requireAuth, userController.restrictUser);
+router.put('/user/:username/ban', requireAuth, userController.banUser);
 
-/**
- * @route   PUT /user/:username/follow
- * @desc    Follow/Unfollow user
- */
-router.put('/user/:username/follow', userController.followUser);
+// --- REPORT ROUTE ---
+router.post('/report', requireAuth, reportController.sendReport);
 
-/**
- * @route   POST /report
- * @desc    Submit a report
- */
-router.post('/report', generalController.createReport);
+// --- COMMUNICATION ROUTES ---
+router.post('/email', communicationController.sendEmail);
+router.post('/notification', communicationController.sendNotification);
 
 export default router;
