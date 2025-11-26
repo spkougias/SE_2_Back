@@ -23,32 +23,49 @@ export const getUser = async (req, res, next) => {
 };
 
 // --- PUT Follow User ---
-export const followUser = async (req, res, next) => {
+export const toggleFollow = async (req, res, next) => {
   try {
-    const { username } = req.params; 
-    const currentUsername = req.user ? req.user.username : req.body.currentUsername; 
+    const { username: targetUsername } = req.params; 
+    const currentUser = req.user; 
 
-    if (!currentUsername) return sendResponse(res, 401, false, null, 'Authentication required');
+    if (!currentUser) return sendResponse(res, 401, false, null, 'Authentication required');
+    const currentUserId = currentUser.id;
 
     if (getMockModeStatus()) {
-      const targetUser = mockUsers.find(u => u.username === username);
-      const currentUser = mockUsers.find(u => u.username === currentUsername);
+      const targetUser = mockUsers.find(u => u.username === targetUsername);
+      const followerUser = mockUsers.find(u => u.id === currentUserId);
 
-      if (!targetUser || !currentUser) return sendResponse(res, 404, false, null, 'User not found');
+      if (!targetUser || !followerUser) return sendResponse(res, 404, false, null, 'User not found');
 
-      const idx = currentUser.following.indexOf(targetUser._id);
-      if (idx > -1) {
-        currentUser.following.splice(idx, 1);
-        const fIdx = targetUser.followers.indexOf(currentUser._id);
-        targetUser.followers.splice(fIdx, 1);
+      // Check if already following (using user ID)
+      const isFollowing = followerUser.following.includes(targetUser.id);
+      if (isFollowing) {
+        followerUser.following = followerUser.following.filter(id => id !== targetUser.id);
+        targetUser.followers = targetUser.followers.filter(id => id !== currentUserId);
         return sendResponse(res, 200, true, null, 'Unfollowed (Mock)');
       } else {
-        currentUser.following.push(targetUser._id);
-        targetUser.followers.push(currentUser._id);
+        followerUser.following.push(targetUser.id);
+        targetUser.followers.push(currentUserId);
         return sendResponse(res, 200, true, null, 'Followed (Mock)');
       }
     } else {
-      return sendResponse(res, 200, true, null, 'Follow logic for DB placeholder');
+      const targetUser = await User.findOne({ username: targetUsername });
+      const followerUser = await User.findOne({ id: currentUserId });
+
+      if (!targetUser || !followerUser) return sendResponse(res, 404, false, null, 'User not found');
+
+      const isFollowing = followerUser.following.includes(targetUser.id);
+      const targetUserId = targetUser.id;
+
+      if (isFollowing) {
+        await User.updateOne({ id: currentUserId }, { $pull: { following: targetUserId } });
+        await User.updateOne({ username: targetUsername }, { $pull: { followers: currentUserId } });
+        return sendResponse(res, 200, true, { followed: false }, 'Unfollowed (DB)');
+      } else {
+        await User.updateOne({ id: currentUserId }, { $push: { following: targetUserId } });
+        await User.updateOne({ username: targetUsername }, { $push: { followers: currentUserId } });
+        return sendResponse(res, 200, true, { followed: true }, 'Followed (DB)');
+      }
     }
   } catch (error) {
     next(error);
