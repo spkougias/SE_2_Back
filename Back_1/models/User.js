@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
+  id: {
+    type: String,
+    required: true,
+    unique: true
+  },
   username: {
     type: String,
     required: true,
@@ -27,11 +32,11 @@ const UserSchema = new mongoose.Schema({
     default: []
   },
   followers: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'User'
   }],
   following: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'User'
   }]
 }, { timestamps: true });

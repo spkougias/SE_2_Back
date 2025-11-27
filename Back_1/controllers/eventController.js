@@ -25,7 +25,7 @@ export const getEventById = async (req, res, next) => {
       if (!event) return sendResponse(res, 404, false, null, 'Event not found');
 
       if (event.comments && event.comments.length > 0) {
-          comments = await Comment.find({ _id: { $in: event.comments } }).lean();
+          comments = await Comment.find({ id: { $in: event.comments } }).lean();
       }
     }
 
@@ -47,17 +47,20 @@ export const getEventById = async (req, res, next) => {
 export const createEvent = async (req, res, next) => {
   try {
     // REVERTED: Accept 'host' from body
-    const { name, date, price, location, description, category, host } = req.body;
+    const { name, date, price, location, description, category, ageGroup, host } = req.body;
     
     // Fallback: If body host is missing, try to use logged-in user
     let finalHostId = host;
     if (!finalHostId && req.user) {
-        finalHostId = getStringId(req.user._id);
+        finalHostId = req.user.id;
     }
 
     if (!name || !finalHostId || !date) {
       return sendResponse(res, 400, false, null, 'Name, Date and Host are required');
     }
+
+    const finalCategory = Array.isArray(category) && category.length > 0 ? category : ['Other'];
+    const finalAgeGroup = Array.isArray(ageGroup) && ageGroup.length > 0 ? ageGroup : ['Everyone'];
 
     const newEventData = {
       id: Math.floor(Math.random() * 1000),
@@ -66,7 +69,8 @@ export const createEvent = async (req, res, next) => {
       price,
       location,
       description,
-      category,
+      category: finalCategory,
+      ageGroup: finalAgeGroup,
       host: finalHostId, 
       interestedIn: [],
       comments: []
@@ -88,7 +92,7 @@ export const createEvent = async (req, res, next) => {
 export const updateEvent = async (req, res, next) => {
   try {
     const { eventid } = req.params;
-    const updates = req.body;
+    const { category, ageGroup, ...otherUpdates } = req.body;
     const currentUser = req.user;
 
     if (!currentUser) return sendResponse(res, 401, false, null, 'Authentication required');
@@ -103,11 +107,23 @@ export const updateEvent = async (req, res, next) => {
     if (!event) return sendResponse(res, 404, false, null, 'Event not found');
 
     // Security Check: Must be Host or Admin
-    const currentUserId = getStringId(currentUser._id);
+    const currentUserId = getStringId(currentUser.id);
     const eventHostId = getStringId(event.host);
-    
-    if (eventHostId !== currentUserId && !currentUser.isAdmin) {
+
+    if (eventHostId !== currentUserId) {
         return sendResponse(res, 403, false, null, 'Permission Denied: Only Host can edit');
+    }
+
+    const updates = { ...otherUpdates };
+    
+    if (category && Array.isArray(category)) {
+        updates.category = category.filter(c => typeof c === 'string' && c.trim() !== '');
+        if (updates.category.length === 0) updates.category = ['Other'];
+    }
+
+    if (ageGroup && Array.isArray(ageGroup)) {
+        updates.ageGroup = ageGroup.filter(a => typeof a === 'string' && a.trim() !== '');
+        if (updates.ageGroup.length === 0) updates.ageGroup = ['Everyone'];
     }
 
     if (getMockModeStatus()) {
@@ -147,7 +163,8 @@ export const deleteEvent = async (req, res, next) => {
         eventHostId = getStringId(e.host);
     }
 
-    const currentUserId = getStringId(currentUser._id);
+    const currentUserId = getStringId(currentUser.id);
+
     // Security Check: Host or Admin
     if (eventHostId !== currentUserId && !currentUser.isAdmin) {
             return sendResponse(res, 403, false, null, 'Permission Denied: Only Host or Admin can delete event');
@@ -170,11 +187,8 @@ export const deleteEvent = async (req, res, next) => {
 export const toggleInterest = async (req, res, next) => {
   try {
     const { eventid } = req.params;
-    // REVERTED: Check body first, then req.user
-    let userId = req.body.userId;
-    if (!userId && req.user) {
-        userId = getStringId(req.user._id);
-    }
+    const currentUser = req.user;
+    const userId = currentUser.id
 
     if(!userId) return sendResponse(res, 400, false, null, 'User ID required');
 
@@ -190,7 +204,18 @@ export const toggleInterest = async (req, res, next) => {
       }
       return sendResponse(res, 200, true, event.interestedIn, 'Interest toggled (Mock)');
     } else {
-        return sendResponse(res, 200, true, null, 'DB Logic for toggle interest placeholder');
+        const event = await Event.findOne({ id: eventid });
+        if (!event) return sendResponse(res, 404, false, null, 'Event not found');
+
+        const alreadyInterested = event.interestedIn.includes(userId);
+        if (alreadyInterested) {
+          event.interestedIn = event.interestedIn.filter(id => id !== userId);
+        } else {
+          event.interestedIn.push(userId);
+        }
+
+        await event.save();
+        return sendResponse(res, 200, true, event.interestedIn, 'Interest toggled');
     }
   } catch (error) {
     next(error);
@@ -205,14 +230,15 @@ export const addComment = async (req, res, next) => {
         
         let posterId = username;
         if (!posterId && req.user) {
-            posterId = getStringId(req.user._id);
+            posterId = req.user.id;
         }
 
         if(!posterId) return sendResponse(res, 400, false, null, 'Poster ID (username) required');
 
         const newCommentData = {
+            id: "c" + Date.now(),
             text,
-            poster: posterId, 
+            poster: posterId,
             eventId: parseInt(eventid),
             isPinned: false
         };
@@ -225,7 +251,7 @@ export const addComment = async (req, res, next) => {
              return sendResponse(res, 201, true, newCommentData, "Comment added (Mock)");
         } else {
              const comment = await Comment.create(newCommentData);
-             await Event.findOneAndUpdate({id: eventid}, { $push: { comments: comment._id }});
+             await Event.findOneAndUpdate({id: eventid}, { $push: { comments: comment.id }});
              return sendResponse(res, 201, true, comment, "Comment added (DB)");
         }
     } catch (error) {
@@ -242,23 +268,24 @@ export const deleteComment = async (req, res, next) => {
         if (!currentUser) return sendResponse(res, 401, false, null, 'Authentication required');
 
         let comment, event;
+        let idIsObjectId = /^[0-9a-fA-F]{24}$/.test(commentid);
+
         if(getMockModeStatus()) {
             comment = mockComments.find(c => c._id === commentid);
             event = mockEvents.find(e => e.id === parseInt(eventid));
         } else {
-            comment = await Comment.findById(commentid);
+            comment = idIsObjectId 
+                ? await Comment.findById(commentid) 
+                : await Comment.findOne({ id: commentid });
+
             event = await Event.findOne({ id: eventid });
         }
 
         if (!comment || !event) return sendResponse(res, 404, false, null, 'Comment or Event not found');
 
-        const currentUserId = getStringId(currentUser._id);
-        const commentPosterId = getStringId(comment.poster);
-        const eventHostId = getStringId(event.host);
         const isAdmin = currentUser.isAdmin;
-
-        const isAuthor = commentPosterId === currentUserId;
-        const isHost = eventHostId === currentUserId;
+        const isHost = currentUser.id === event.host;
+        const isAuthor = currentUser.id === comment.poster;
 
         if (!isAuthor && !isHost && !isAdmin) {
             return sendResponse(res, 403, false, null, 'Permission Denied: You cannot delete this comment');
@@ -271,9 +298,16 @@ export const deleteComment = async (req, res, next) => {
             if(eIdx > -1) event.comments.splice(eIdx, 1);
             return sendResponse(res, 204, true, null, 'Comment deleted (Mock)');
         } else {
-            await Comment.findByIdAndDelete(commentid);
-            await Event.findOneAndUpdate({id: eventid}, { $pull: { comments: commentid }});
-            return sendResponse(res, 204, true, null, 'Comment deleted (DB)');
+            const commentStringId = comment.id;
+
+            await Comment.findOneAndDelete({ id: commentStringId });
+            
+            await Event.findOneAndUpdate(
+              { id: eventid },
+              { $pull: { comments: commentStringId } }
+            );
+
+            return sendResponse(res, 204, true, null, "Comment deleted (DB)");
         }
     } catch (error) {
         next(error);
@@ -299,8 +333,8 @@ export const pinComment = async (req, res, next) => {
 
         if (!event || !comment) return sendResponse(res, 404, false, null, 'Not found');
 
-        const currentUserId = getStringId(currentUser._id);
-        const eventHostId = getStringId(event.host);
+        const currentUserId = currentUser.id;
+        const eventHostId = event.host;
 
         if (eventHostId !== currentUserId) {
             return sendResponse(res, 403, false, null, 'Permission Denied: Only Host can pin');
@@ -337,4 +371,84 @@ export const getRecommendedEvents = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+// --- 10. PUT Vouch Event ---
+export const toggleVouch = async (req, res, next) => {
+  try {
+    const { eventid } = req.params;
+    const currentUser = req.user;
+    const userId = currentUser.id;
+
+    let event;
+    if(getMockModeStatus()) {
+      const event = mockEvents.find(e => e.id === parseInt(eventid));
+      if (!event) return sendResponse(res, 404, false, null, 'Event not found');
+
+      if(!event.vouchers) event.vouchers = [];
+      const idx = event.vouchers.indexOf(userId);
+      if(idx > -1) {
+        event.vouchers.splice(idx, 1);
+      } else {
+        event.vouchers.push(userId);
+      }
+      return sendResponse(res, 200, true, event.vouchers, 'Vouched (Mock)');
+    } else {
+      const event = await Event.findOne({ id: eventid });
+      if(!event) return sendResponse(res, 404, false, null, 'Event not found');
+
+      const alreadyVouched = event.vouchers.includes(userId);
+      
+      if (alreadyVouched) {
+        event.vouchers = event.vouchers.filter(id => id !== userId);
+      } else {
+        event.vouchers.push(userId);
+      }
+
+      await event.save();
+      return sendResponse(res, 200, true, event.vouchers, 'Vouched (DB)');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- 11. POST Make Announcement ---
+export const makeAnnouncement = async (req, res, next) => {
+    try {
+        const { eventid } = req.params;
+        const { text } = req.body;
+        const currentUser = req.user;
+
+        if (!currentUser) return sendResponse(res, 401, false, null, 'Authentication required');
+
+        let event;
+        if (getMockModeStatus()) {
+            event = mockEvents.find(e => e.id === parseInt(eventid));
+        } else {
+            event = await Event.findOne({ id: eventid });
+        }
+
+        if (!event) {
+            return sendResponse(res, 404, false, null, 'Event not found');
+        }
+
+        // Security Check: Only Host can announce
+        const eventHostId = event.host;
+        const currentUserId = currentUser.id;
+
+        if (eventHostId !== currentUserId) {
+            return sendResponse(res, 403, false, null, 'Permission Denied: Only Host can make an announcement');
+        }
+
+        // Text Validation (Required for a non-empty announcement)
+        if (!text || text.trim() === '') {
+            return sendResponse(res, 400, false, null, 'Announcement text is required');
+        }
+
+        return sendResponse(res, 200, true, { status: 'success' }, 'Announcement sent successfully');
+
+    } catch (error) {
+        next(error);
+    }
 };

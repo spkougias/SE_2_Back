@@ -25,16 +25,16 @@ const EventSchema = new mongoose.Schema({
   description: {
     type: String
   },
-  ageGroup: {
+  ageGroup: [{
     type: String,
-    enum: ['everyone', 'teens', 'adults'],
-    default: 'everyone'
-  },
-  category: {
+    enum: ['Everyone','Teens','Adults'],
+    default: 'Everyone'
+  }],
+  category: [{
     type: String,
-    enum: ['party', 'concert', 'bazaar', 'movie night', 'competition', 'workshop', 'food event', 'other'],
-    default: 'other'
-  },
+    enum: ['Party','Concert','Bazaar','Movie Night','Competition','Workshop','Food Event','Other'],
+    default: 'Other'
+  }],
   photos: [String],
   host: {
     type: String, // Storing username or ID reference
@@ -42,10 +42,7 @@ const EventSchema = new mongoose.Schema({
   },
   interestedIn: [String], // Array of usernames
   vouchers: [String], // Array of usernames
-  comments: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Comment'
-  }]
+  comments: [String]
 }, { timestamps: true });
 
 // FIX: Check if model exists before compiling

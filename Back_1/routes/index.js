@@ -21,6 +21,8 @@ router.get('/event/:eventid', eventController.getEventById);
 router.put('/event/:eventid', requireAuth, eventController.updateEvent);
 router.delete('/event/:eventid', requireAuth, eventController.deleteEvent);
 router.put('/event/:eventid/interested', requireAuth, eventController.toggleInterest);
+router.put('/event/:eventid/vouch', requireAuth, eventController.toggleVouch);
+router.post('/event/:eventid/announcement', requireAuth, eventController.makeAnnouncement);
 
 // Comment specific routes
 router.post('/event/:eventid/comment', requireAuth, eventController.addComment);
@@ -29,7 +31,7 @@ router.put('/event/:eventid/comment/:commentid/pin', requireAuth, eventControlle
 
 // --- USER ROUTES ---
 router.get('/user/:username', userController.getUser);
-router.put('/user/:username/follow', requireAuth, userController.followUser);
+router.put('/user/:username/follow', requireAuth, userController.toggleFollow);
 router.put('/user/:username/restrict', requireAuth, userController.restrictUser);
 router.put('/user/:username/ban', requireAuth, userController.banUser);
 
