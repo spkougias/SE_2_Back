@@ -1,0 +1,41 @@
+name: Backend CI/CD
+
+# Trigger on push to main or pull requests
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # JOB 1: Continuous Integration (Test)
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Backend Tests
+        run: npm test
+        env:
+          MONGO_URI: "" # Force Mock Mode for testing
+
+  # JOB 2: Continuous Deployment (Deploy)
+  cd:
+    runs-on: ubuntu-latest
+    needs: ci # Only run if tests pass
+    if: github.ref == 'refs/heads/main' # Only deploy from main branch
+    steps:
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_BACKEND_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
