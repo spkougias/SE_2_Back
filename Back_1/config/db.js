@@ -26,5 +26,15 @@ const connectDB = async () => {
   }
 };
 
+/**
+ * Closes the MongoDB connection gracefully.
+ */
+export const disconnectDB = async () => {
+    if (mongoose.connection.readyState !== 0) {
+        await mongoose.connection.close();
+        console.log('🔌 MongoDB Disconnected');
+    }
+};
+
 export const getMockModeStatus = () => isMockMode;
 export default connectDB;
