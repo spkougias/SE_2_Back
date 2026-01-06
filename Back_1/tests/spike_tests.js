@@ -4,7 +4,7 @@ import { check, sleep } from 'k6';
 export const options = {
   stages: [
     { duration: '10s', target: 100 },  // Baseline
-    { duration: '20s', target: 1100 }, // Spike: Rapidly exceed (NFR: 1000 users)
+    { duration: '20s', target: 1200 }, // Spike: Rapidly exceed (NFR: 1000 users)
     { duration: '20s', target: 50 },   // Scale back
     { duration: '10s', target: 0 },
   ],
