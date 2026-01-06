@@ -62,13 +62,13 @@ jobs:
       - name: Run Load Tests
         uses: grafana/k6-action@v0.3.0
         with:
-          filename: Back_1/load_tests.js
+          filename: Back_1/tests/load_tests.js
           flags: --env API_URL=http://localhost:8080
 
       - name: Run Spike Tests
         uses: grafana/k6-action@v0.3.0
         with:
-          filename: Back_1/spike_tests.js
+          filename: Back_1/tests/spike_tests.js
           flags: --env API_URL=http://localhost:8080
 
   # JOB 3: Continuous Deployment (Deploy)
