@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '1m', target: 100 },  // Ramp-up to 100 (from 500) users
-    { duration: '2m', target: 200 },  // Steady state (NFR: 1000 users)
+    { duration: '1m', target: 500 },  // Ramp-up to 500 users
+    { duration: '2m', target: 1000 }, // Steady state (NFR: 1000 users)
     { duration: '1m', target: 0 },    // Ramp-down
   ],
   thresholds: {
