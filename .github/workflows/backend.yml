@@ -64,12 +64,14 @@ jobs:
         with:
           filename: Back_1/tests/load_tests.js
           flags: --env API_URL=http://host.docker.internal:8080
+          extra-args: --add-host=host.docker.internal:host-gateway
 
       - name: Run Spike Tests
         uses: grafana/k6-action@v0.3.0
         with:
           filename: Back_1/tests/spike_tests.js
           flags: --env API_URL=http://host.docker.internal:8080
+          extra-args: --add-host=host.docker.internal:host-gateway
 
   # JOB 3: Continuous Deployment (Deploy)
   cd:
