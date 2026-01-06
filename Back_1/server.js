@@ -9,14 +9,17 @@ const PORT = process.env.PORT || 8080;
 
 // Start Database Connection (Will fallback to Mock if fails)
 // Do NOT connect to DB during tests
-if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() => {
-    app.listen(PORT, () => {
-      console.log(`
-        🚀 Server running on port ${PORT}
-        Documentation: http://localhost:${PORT}/
-        Mode: ${process.env.MONGO_URI ? 'Database Attempt' : 'Mock Data Forced'}
-      `);
-    });
+const startServer = () => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
+};
+
+if (process.env.NODE_ENV !== 'test') {
+  connectDB()
+    .then(startServer)
+    .catch((err) => {
+      console.error("DB Connection failed, starting in Mock Mode...", err.message);
+      startServer();
+    });
 }
