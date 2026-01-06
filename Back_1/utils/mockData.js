@@ -1858,5 +1858,50 @@ export const mockEvents = [
     "ageGroup": [
       "Teens"
     ]
-  }
+  },
+  {
+        id: 101,
+        name: "Summer Disco Night",
+        date: new Date("2025-07-15T20:00:00Z"),
+        price: 15,
+        location: [40.6401, 22.9444], // Thessaloniki coordinates
+        description: "The biggest disco party of the summer.",
+        ageGroup: "Adults",
+        category: "Party",
+        host: "u1",
+        photos: ["https://example.com/disco.jpg"],
+        interestedIn: ["u2", "u3"],
+        vouchers: ["u2"],
+        comments: ["c1", "c2"]
+    },
+    {
+        id: 102,
+        name: "Tech Workshop 2025",
+        date: new Date("2025-11-20T10:00:00Z"),
+        price: 0,
+        location: [40.6293, 22.9602],
+        description: "Learn Node.js and Express.",
+        ageGroup: "Everyone",
+        category: "Workshop",
+        host: "u2",
+        photos: [],
+        interestedIn: ["u1"],
+        vouchers: [],
+        comments: []
+    },
+    {
+        id: 103,
+        name: "Sunday Bazaar",
+        date: new Date("2025-11-23T09:00:00Z"),
+        price: 5,
+        location: [40.6300, 22.9500],
+        description: "Vintage clothes and handmade items.",
+        ageGroup: "Everyone",
+        category: "Bazaar",
+        host: "u1",
+        photos: [],
+        interestedIn: [],
+        vouchers: [],
+        comments: []
+    }
 ];
