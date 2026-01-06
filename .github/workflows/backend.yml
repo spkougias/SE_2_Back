@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
@@ -44,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install dependencies
         run: npm install
@@ -57,7 +57,7 @@ jobs:
           MONGO_URI: ""
 
       - name: Wait for Server
-        run: npx wait-on http://localhost:8080/search
+        run: npx wait-on http://127.0.0.1:8080/search
 
       - name: Run Load Tests
         uses: grafana/k6-action@v0.3.0
