@@ -17,7 +17,7 @@ const startServer = () => {
 
 if (process.env.NODE_ENV !== 'test') {
   connectDB()
-    .then(startServer)
+    .then(() => startServer())
     .catch((err) => {
       console.error("DB Connection failed, starting in Mock Mode...", err.message);
       startServer();
