@@ -59,19 +59,17 @@ jobs:
       - name: Wait for Server
         run: npx wait-on http://127.0.0.1:8080/search
 
+      - name: Install k6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v0.48.0/k6-v0.48.0-linux-amd64.tar.gz -o k6.tar.gz
+          tar -xzf k6.tar.gz
+          sudo cp k6-v0.48.0-linux-amd64/k6 /usr/local/bin/
+
       - name: Run Load Tests
-        uses: grafana/k6-action@v0.3.0
-        with:
-          filename: Back_1/tests/load_tests.js
-          flags: --env API_URL=http://host.docker.internal:8080
-          extra-args: --add-host=host.docker.internal:host-gateway
+        run: k6 run tests/load_tests.js --env API_URL=http://127.0.0.1:8080
 
       - name: Run Spike Tests
-        uses: grafana/k6-action@v0.3.0
-        with:
-          filename: Back_1/tests/spike_tests.js
-          flags: --env API_URL=http://host.docker.internal:8080
-          extra-args: --add-host=host.docker.internal:host-gateway
+        run: k6 run tests/spike_tests.js --env API_URL=http://127.0.0.1:8080
 
   # JOB 3: Continuous Deployment (Deploy)
   cd:
