@@ -63,13 +63,13 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: Back_1/tests/load_tests.js
-          flags: --env API_URL=http://localhost:8080
+          flags: --env API_URL=http://127.0.0.1:8080 --network host
 
       - name: Run Spike Tests
         uses: grafana/k6-action@v0.3.0
         with:
           filename: Back_1/tests/spike_tests.js
-          flags: --env API_URL=http://localhost:8080
+          flags: --env API_URL=http://127.0.0.1:8080 --network host
 
   # JOB 3: Continuous Deployment (Deploy)
   cd:
