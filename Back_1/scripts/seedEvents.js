@@ -40,6 +40,10 @@ const seedEvents = async () => {
                 location: [40.6 + i, 22.9 + i/2],
                 category: [categories[i % categories.length]], 
                 ageGroup: [ageGroups[i % ageGroups.length]],
+                photos: [],
+                interestedIn: [],
+                vouchers: [],
+                comments: []
             });
         }
 
