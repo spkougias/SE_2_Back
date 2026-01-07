@@ -3,7 +3,6 @@ import Event from '../models/Event.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 // Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -50,7 +49,7 @@ const seedEvents = async () => {
         await Event.insertMany(events);
         console.log(`🎉 Inserted ${events.length} events`);
         console.log('✅ Database seeding complete!');
-    } catch (error) {
+    } catch (err) {
         console.error('❌ Seeding error:', err);
     } finally {
         await mongoose.disconnect();
