@@ -380,7 +380,6 @@ export const toggleVouch = async (req, res, next) => {
     const currentUser = req.user;
     const userId = currentUser.id;
 
-    let event;
     if(getMockModeStatus()) {
       const event = mockEvents.find(e => e.id === parseInt(eventid));
       if (!event) return sendResponse(res, 404, false, null, 'Event not found');
