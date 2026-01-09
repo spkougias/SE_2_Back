@@ -17,7 +17,8 @@ app.use(morgan('dev')); // Logging
 app.use('/', router); 
 
 // 404 Handler for undefined routes
-app.use((req, res) => {
+// The first parameter (req) is changed to _ to resolve the unused variable violation
+app.use((_, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 

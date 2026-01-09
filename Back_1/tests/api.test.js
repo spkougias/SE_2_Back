@@ -459,6 +459,7 @@ test("POST /report requires authentication", async (t) => {
 // --- COMMUNICATION TESTS ---
 test("POST /email sends email", async (t) => {
   const { body, statusCode } = await t.context.got.post("email", {
+    headers: { 'x-username': 'u1' },
     json: {
       text: "Test email",
       receivers: ["user1@example.com"]
@@ -470,6 +471,7 @@ test("POST /email sends email", async (t) => {
 
 test("POST /notification sends notification", async (t) => {
   const { body, statusCode } = await t.context.got.post("notification", {
+    headers: { 'x-username': 'u1' },
     json: {
       text: "Test notification",
       eventId: 101
@@ -481,6 +483,7 @@ test("POST /notification sends notification", async (t) => {
 
 test("POST /email returns 400 if text is missing", async (t) => {
   const { body, statusCode } = await t.context.got.post("email", {
+    headers: { 'x-username': 'u1' },
     json: {
       receivers: ["user1@example.com"]
     }
@@ -492,6 +495,7 @@ test("POST /email returns 400 if text is missing", async (t) => {
 
 test("POST /notification returns 400 if text is missing", async (t) => {
   const { body, statusCode } = await t.context.got.post("notification", {
+    headers: { 'x-username': 'u1' },
     json: {
       eventId: 101
     }

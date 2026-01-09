@@ -3,7 +3,7 @@ import { sendResponse } from '../utils/responseHandler.js';
 /**
  * Centralized Error Handler Middleware
  */
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err, _req, res, _next) => {
   console.error(`❌ Error: ${err.message}`);
   console.error(err.stack);
 
