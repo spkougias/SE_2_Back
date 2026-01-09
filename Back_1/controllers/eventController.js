@@ -380,8 +380,10 @@ export const toggleVouch = async (req, res, next) => {
     const currentUser = req.user;
     const userId = currentUser.id;
 
+    let event;
+    
     if(getMockModeStatus()) {
-      const event = mockEvents.find(e => e.id === parseInt(eventid));
+      event = mockEvents.find(e => e.id === parseInt(eventid));
       if (!event) return sendResponse(res, 404, false, null, 'Event not found');
 
       if(!event.vouchers) event.vouchers = [];
@@ -393,7 +395,7 @@ export const toggleVouch = async (req, res, next) => {
       }
       return sendResponse(res, 200, true, event.vouchers, 'Vouched (Mock)');
     } else {
-      const event = await Event.findOne({ id: eventid });
+      event = await Event.findOne({ id: eventid });
       if(!event) return sendResponse(res, 404, false, null, 'Event not found');
 
       const alreadyVouched = event.vouchers.includes(userId);
