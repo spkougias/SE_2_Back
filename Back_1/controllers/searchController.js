@@ -5,6 +5,14 @@ import { getMockModeStatus } from '../config/db.js';
 import { sendResponse } from '../utils/responseHandler.js';
 
 /**
+ * [FIX] Helper to sanitize regex input
+ * Escapes characters that have special meaning in regex to prevent injection attacks.
+ */
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+/**
  * @desc    Search for Events and/or Users
  * @route   GET /search
  * @access  Public
@@ -26,8 +34,13 @@ export const search = async (req, res, next) => {
     const searchUsers = !type || type === 'user';
     const searchEvents = !type || type === 'event';
 
+    // [FIX] Create a sanitized version of the search text for MongoDB
+    const safeSearchText = searchText ? escapeRegex(searchText) : '';
+
     if (getMockModeStatus()) {
       // --- MOCK DATA LOGIC ---
+      // Note: We use the original 'searchText' here because .includes() treats input as literal strings,
+      // so it is not vulnerable to regex injection.
       
       if (searchUsers) {
         results.users = mockUsers.filter(u => {
@@ -41,10 +54,10 @@ export const search = async (req, res, next) => {
         results.events = mockEvents.filter(e => {
           let match = true;
           if (searchText) {
-            match = match && ((e.name || '').toLowerCase().includes(searchText.toLowerCase()) || 
-                              (e.description || '').toLowerCase().includes(searchText.toLowerCase()));
+             match = (e.name || '').toLowerCase().includes(searchText.toLowerCase()) || 
+                     (e.description || '').toLowerCase().includes(searchText.toLowerCase());
           }
-          if (category) match = match && e.category === category;
+          if (category) match = match && e.category === category; 
           if (ageGroup) match = match && e.ageGroup === ageGroup;
           return match;
         });
@@ -57,8 +70,9 @@ export const search = async (req, res, next) => {
         const userQuery = {};
         if (searchText) {
           userQuery.$or = [
-            { name: { $regex: searchText, $options: 'i' } },
-            { username: { $regex: searchText, $options: 'i' } }
+            // [FIX] Use safeSearchText to prevent NoSQL Injection
+            { name: { $regex: safeSearchText, $options: 'i' } },
+            { username: { $regex: safeSearchText, $options: 'i' } }
           ];
         }
         results.users = await User.find(userQuery);
@@ -68,8 +82,9 @@ export const search = async (req, res, next) => {
         const eventQuery = {};
         if (searchText) {
           eventQuery.$or = [
-            { name: { $regex: searchText, $options: 'i' } },
-            { description: { $regex: searchText, $options: 'i' } }
+            // [FIX] Use safeSearchText to prevent NoSQL Injection
+            { name: { $regex: safeSearchText, $options: 'i' } },
+            { description: { $regex: safeSearchText, $options: 'i' } }
           ];
         }
         if (category) eventQuery.category = category;
@@ -85,9 +100,8 @@ export const search = async (req, res, next) => {
       return sendResponse(res, 200, true, results.events, 'Event search results');
     } else {
       // Return combined object if no type specified
-      return sendResponse(res, 200, true, results, 'Combined search results');
+      return sendResponse(res, 200, true, results, 'Search results');
     }
-
   } catch (error) {
     next(error);
   }
