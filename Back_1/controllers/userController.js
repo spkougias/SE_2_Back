@@ -81,6 +81,13 @@ export const restrictUser = async (req, res, next) => {
     if (!currentUser || !currentUser.isAdmin) {
        return sendResponse(res, 403, false, null, 'Permission Denied: Only Admin can restrict users');
     }
+    
+    if (getMockModeStatus()) {
+        const user = mockUsers.find(u => u.username === username);
+        if (user) user.isRestricted = true;
+    } else {
+        await User.updateOne({ username }, { isRestricted: true });
+    }
 
     console.log(`🔨 RESTRICTING USER: ${username} by Admin: ${currentUser.username}`);
     return sendResponse(res, 200, true, null, `User ${username} restricted successfully`);
@@ -99,6 +106,13 @@ export const banUser = async (req, res, next) => {
        return sendResponse(res, 403, false, null, 'Permission Denied: Only Admin can ban users');
     }
 
+    if (getMockModeStatus()) {
+        const user = mockUsers.find(u => u.username === username);
+        if (user) user.isBanned = true;
+    } else {
+        await User.updateOne({ username }, { isBanned: true });
+    }
+    
     console.log(`🚫 BANNING USER: ${username} by Admin: ${currentUser.username}`);
     return sendResponse(res, 200, true, null, `User ${username} banned successfully`);
   } catch (error) {

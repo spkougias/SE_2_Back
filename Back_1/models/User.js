@@ -38,7 +38,15 @@ const UserSchema = new mongoose.Schema({
   following: [{
     type: String,
     ref: 'User'
-  }]
+  }],
+  isRestricted: {
+    type: Boolean,
+    default: false
+  },
+  isBanned: {
+    type: Boolean,
+    default: false
+  }
 }, { timestamps: true });
 
 // FIX: Check if model exists before compiling
