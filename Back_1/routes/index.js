@@ -39,7 +39,7 @@ router.put('/user/:username/ban', requireAuth, userController.banUser);
 router.post('/report', requireAuth, reportController.sendReport);
 
 // --- COMMUNICATION ROUTES ---
-router.post('/email', communicationController.sendEmail);
-router.post('/notification', communicationController.sendNotification);
+router.post('/email', requireAuth, communicationController.sendEmail);
+router.post('/notification', requireAuth, communicationController.sendNotification);
 
 export default router;
