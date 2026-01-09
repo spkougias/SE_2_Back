@@ -32,8 +32,8 @@ export const search = async (req, res, next) => {
       if (searchUsers) {
         results.users = mockUsers.filter(u => {
           if (!searchText) return true;
-          return u.name.toLowerCase().includes(searchText.toLowerCase()) || 
-                 u.username.toLowerCase().includes(searchText.toLowerCase());
+          return (u.name || '').toLowerCase().includes(searchText.toLowerCase()) || 
+                 (u.username || '').toLowerCase().includes(searchText.toLowerCase());
         });
       }
 
@@ -41,8 +41,8 @@ export const search = async (req, res, next) => {
         results.events = mockEvents.filter(e => {
           let match = true;
           if (searchText) {
-            match = match && (e.name.toLowerCase().includes(searchText.toLowerCase()) || 
-                              e.description.toLowerCase().includes(searchText.toLowerCase()));
+            match = match && ((e.name || '').toLowerCase().includes(searchText.toLowerCase()) || 
+                              (e.description || '').toLowerCase().includes(searchText.toLowerCase()));
           }
           if (category) match = match && e.category === category;
           if (ageGroup) match = match && e.ageGroup === ageGroup;
