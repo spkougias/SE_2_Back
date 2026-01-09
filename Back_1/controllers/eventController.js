@@ -322,13 +322,21 @@ export const pinComment = async (req, res, next) => {
 
         if (!currentUser) return sendResponse(res, 401, false, null, 'Authentication required');
 
+        // [FIX] Determine if the ID provided is a MongoDB ObjectId
+        let idIsObjectId = /^[0-9a-fA-F]{24}$/.test(commentid);
         let event, comment;
+
         if(getMockModeStatus()) {
             event = mockEvents.find(e => e.id === parseInt(eventid));
-            comment = mockComments.find(c => c._id === commentid);
+            // [FIX] Support finding by _id OR public id in Mock mode
+            comment = mockComments.find(c => c._id === commentid || c.id === commentid);
         } else {
             event = await Event.findOne({ id: eventid });
-            comment = await Comment.findById(commentid);
+            
+            // [FIX] Try finding by ObjectId first, otherwise find by custom 'id' string
+            comment = idIsObjectId 
+                ? await Comment.findById(commentid) 
+                : await Comment.findOne({ id: commentid });
         }
 
         if (!event || !comment) return sendResponse(res, 404, false, null, 'Not found');
